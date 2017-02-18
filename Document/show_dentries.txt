@@ -1,0 +1,55 @@
+2017/02/15
+
+Attack linux using kprobe.
+
+Tonight I wanna to show all the dentries inhabited in our current
+kernel.
+all the dentries are linked by:
+
+	struct hlist_bl_head *dentry_hashtable;  fs/dcache.c
+
+So we can get the dentry_hashtable pointer and traverl all the
+dentry tree.
+
+How to get such the dentry_hashtable, as It is static defination,
+so we could NOT touch it directly, currently I think kprobe may
+be a good method to show the dentries info.
+
+static unsigend int d_hash_mask
+static unsigned int d_hash_shift [seems no way to fetch value]
+
+Or we can trace the whole system from one single dentry?!
+
+struct dentry {
+	unsigned int flags;
+	seqcount_t d_seq;
+	struct hlist_bl_node d_hash;	/* lookup hash list */
+	struct dentry *d_parent;
+	struct qstr d_name;
+	struct inode *d_inode;
+	struct super_block *d_sb;
+	sturct list_head d_child;
+	struct list_head d_subdirs;
+}
+
+As the d_hash_mask data struct are NOT exported, but we can get
+the infos
+
+plan2: all dentries are linked in super_block, so that we can
+get them by get the super_block.
+
+2017/02/18
+the dentry_show part has been finished, NExt step, we should know
+how to trigger such issue from userspace and More we should NOT
+use printk to output the info.
+
+Learn ktap.
+how to inject a code into kernel.
+
+Add a fd in debugfs, to load a file
+
+2017/02/18 how a write file into buffer, and what buffer?
+
+2017/02/20 how to format the output to A void *data buffer.
+
+we can use the trace_seq_printf
