@@ -67,8 +67,10 @@ typedef struct fslook_state {
 } fslook_state_t;
 
 #endif
+struct channel_manager;
 
 struct fslook_info {
+	struct channel_manager *flcm;
 	struct dentry *dentry;
 	struct dentry *dentry_vm;
 	struct dentry *dentry_usr;

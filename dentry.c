@@ -6,7 +6,6 @@
 /* 2017/02/15 23:00 */
 /* Tonight, I wanna to show all the dentries in linux */
 static struct kprobe kp = {
-//	.symbol_name = "d_drop",
 	.symbol_name = "d_drop",
 
 };

@@ -53,3 +53,13 @@ Add a fd in debugfs, to load a file
 2017/02/20 how to format the output to A void *data buffer.
 
 we can use the trace_seq_printf
+
+2017/02/17
+design a unified fd for userdata space
+/sys/kernel/debug/fslook
+                   |-----fslookvm
+				   |-----channel
+				           |-----cpu0
+						   |-----cpu1
+						   |-----cpu2
+						   |-----cpu3

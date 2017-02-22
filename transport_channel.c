@@ -8,20 +8,13 @@
 #include "fslook.h"
 #include "include/fslook_types.h"
 
-static struct dentry *dir;
-static struct rchan *chan;
-
-static size_t subbuf_size = 262144; /* 256K each buffer */
-static size_t n_subbufs = 1;
-static int count = 0;
-
 static int subbuf_start_handler(struct rchan_buf *buf,
 		void *subbuf,
 		void *prev_subbuf,
 		size_t prev_padding)
 {
 	if (relay_buf_full(buf)) {
-		printk("cpu:%d %d\n", smp_processor_id(), count++);
+		printk("cpu:%d %d\n", smp_processor_id(), 1); 
 		return 0;
 	}
 	return 1;
@@ -53,9 +46,11 @@ static struct rchan_callbacks relay_callbacks =
 	.remove_buf_file = remove_buf_file_handler,
 };
 
-static struct rchan *create_channel(unsigned size, unsigned n)
+static struct rchan *create_channel(struct dentry *dir,
+							unsigned size, unsigned n)
 {
 	struct rchan *channel;
+
 	channel = relay_open("cpu", dir, size, n, &relay_callbacks, NULL);
 	if (!channel) {
 		printk("relay app channel creation failed\n");
@@ -65,11 +60,14 @@ static struct rchan *create_channel(unsigned size, unsigned n)
 }
 
 /* chan should be reserved in fslook_info */
-void fslook_printf(const char *fmt, ...)
+void fslook_printf(struct fslook_info *fi, const char *fmt, ...)
 {
 	char *buff;
 	va_list args;
 	int len;
+	struct rchan *chan;
+
+	chan = fi->flcm->chan;
 
 	buff = kmalloc(1024, GFP_KERNEL);
 	if (!buff) {
@@ -87,25 +85,38 @@ void fslook_printf(const char *fmt, ...)
 	return;
 }
 
-int init_channel(void)
+int init_channel(struct fslook_info *fi)
 {
-//	struct dentry *buf_file;
-	dir = debugfs_create_dir("fslookWW", NULL);
-	if (!dir) {
+	struct channel_manager *flcm;
+
+	flcm = kmalloc(sizeof(struct channel_manager), GFP_KERNEL);
+	if (!flcm) {
+		printk("NO mem to create channel_manager\n");
+		return -ENOMEM;
+	}
+
+	flcm->dir = debugfs_create_dir("channel", fi->dentry);
+	if (!flcm->dir) {
 		printk("Could NOT create fslook dir\n");
 		return -ENOMEM;
 	}
 
-	chan = create_channel(subbuf_size, n_subbufs);
+	flcm->subbuf_size = 212644; /* 256K each buffer */
+	flcm->n_subbufs = 1;
+
+	flcm->chan = create_channel(flcm->dir, 262144, 1);
+
+	fi->flcm = flcm;
 
 	return 0;
 }
 
 void cleanup_channel(void)
 {
-	printk("remove channel\n");
+	/*
 	if (dir) {
 		printk("------\n");
 		debugfs_remove_recursive(dir);
 	}
+	*/
 }
