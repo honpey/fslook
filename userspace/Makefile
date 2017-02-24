@@ -1,4 +1,4 @@
 fslook:main.c
-	gcc -o $@ $< -lpthread
+	gcc -o $@ $< 
 clean:
 	rm fslook

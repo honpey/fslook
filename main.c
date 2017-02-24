@@ -12,16 +12,25 @@
 #include "fslook.h"
 #include "include/fslook_types.h"
 
+/* Fslook Main Entry */
+struct fslook_info global_fslook_info;
+
 static long fslook_ioctl(struct file *file,
 			unsigned int cmd, unsigned long arg)
 {
 	int ret = 0;
 	struct fslook_info *fi;
 
-	fi = (struct fslook_info *)file->private_data;
+//	fi = (struct fslook_info *)file->private_data;
+	fi = &global_fslook_info;
 	switch (cmd) {
 		case FSLOOK_CMD_IOC_RUN:
-			show_supers(fi);
+			//	show_supers(fi);
+			fslook_printf(fi, "hello world\n");
+			fslook_printf(fi, "hello world.1\n");
+			fslook_printf(fi, "hello world.2\n");
+			fslook_printf(fi, "hello world.3\n");
+			fslook_printf(fi, "hello world.4\n");
 			break;
 		default:
 			return -EINVAL;
@@ -76,9 +85,6 @@ static const struct file_operations fslookvm_fops = {
 	.unlocked_ioctl	= fslookvm_ioctl,
 };
 
-/* Fslook Main Entry */
-struct fslook_info global_fslook_info;
-
 static int __init fslook_init(void)
 {
 	struct fslook_info *fi = &global_fslook_info;
@@ -89,6 +95,8 @@ static int __init fslook_init(void)
 		return -1;
 	}
 
+	/* inode->i_private = fi */
+	/* file->*/
 	fi->dentry_vm = debugfs_create_file("fslookvm", 0444,
 						fi->dentry, fi/* global control */, &fslookvm_fops);
 	if (!fi->dentry_vm) {
@@ -96,6 +104,8 @@ static int __init fslook_init(void)
 		debugfs_remove_recursive(fi->dentry);
 		return -1;
 	}
+
+	strncpy(fi->name, "fslook", 6);
 
 	init_channel(fi);
 

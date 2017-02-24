@@ -4,6 +4,7 @@
 
 #include "fslook.h"
 
+extern struct fslook_info global_fslook_info;
 void show_super(struct super_block *sb, void *arg)
 {
 	struct fslook_info *fi;
@@ -26,6 +27,13 @@ void show_super(struct super_block *sb, void *arg)
 	{
 		i++;
 		fslook_printf(fi, "%d:cur:%s\n", i, cur->d_name.name);
+	}
+
+	i = 0;
+	while(true) {
+		i++;
+		if (i<100);
+		fslook_printf(fi, "----------\n");
 	}
 
 }

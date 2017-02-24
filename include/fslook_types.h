@@ -77,6 +77,7 @@ struct fslook_info {
 	struct task_struct *task;
 	struct ring_buffer *buffer;
 	struct list_head list;
+	char name[30];
 
 };
 

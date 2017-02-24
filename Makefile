@@ -13,3 +13,9 @@ clean:
 	rm *.mod.c
 	rm *.order
 	rm Module.symvers
+load:
+	insmod fslook.ko
+unload:
+	rmmod fslook.ko
+ls:
+	lsmod | grep fslook 2>/dev/null
