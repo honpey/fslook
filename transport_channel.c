@@ -47,7 +47,7 @@ static struct rchan_callbacks relay_callbacks =
 };
 
 static struct rchan *create_channel(struct dentry *dir,
-							unsigned size, unsigned n)
+			unsigned size, unsigned n)
 {
 	struct rchan *channel;
 
@@ -102,9 +102,9 @@ int init_channel(struct fslook_info *fi)
 	}
 
 	flcm->subbuf_size = 262144; /* 256K each buffer */
-	flcm->n_subbufs = 1;
+	flcm->n_subbufs = 2;
 
-	flcm->chan = create_channel(flcm->dir, 262144, 1);
+	flcm->chan = create_channel(flcm->dir, 262144, 2);
 
 	fi->flcm = flcm;
 

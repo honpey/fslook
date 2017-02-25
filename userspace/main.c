@@ -12,6 +12,9 @@
 #include <linux/errno.h>
 
 #include "./fslook.h"
+typedef int bool;
+#define true 1
+#define false 0
 
 pthread_t reader[10];
 /* use poll way to read info from kernel */
@@ -22,6 +25,7 @@ int fslook_read(const char *output)
 	int *fds;
 	char filename[1024];
 	char buf[4096];
+	bool hasData = true;
 
 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
 	printf("%d cpus to work\n", ncpus);
@@ -40,10 +44,14 @@ int fslook_read(const char *output)
 
 	/* we should NOT use poll will relay*/
 read_more:
+	if (!hasData)
+		goto done;		
+	hasData = false;
 	for (i = 0; i < ncpus; i++) {
 		memset(buf, 0, sizeof(buf));
 		ret = read(fds[i], buf, 4096);
 		if (ret != 0) {
+			hasData = true;
 			printf("From CPU:%d, %d bytes\n", i, ret);
 			for (j = 0; j < ret; j++) {
 				printf("%c", buf[j]);
@@ -51,67 +59,8 @@ read_more:
 		}
 	}
 	goto read_more;
-
-/*
-	struct pollfd readers[10];
-	struct pollfd reader;
-	int nready;
-	int len;
-
-	memset(&reader,  0, sizeof(struct pollfd));
-	memset(readers, 0, sizeof(struct pollfd) * 10);
-	for (i = 0; i < ncpus; i++) {
-		readers[i].fd = fds[i];
-		readers[i].events = POLLIN | POLLOUT;
-		printf("fd(%d)\n", fds[i]);
-	}
-
-	reader.fd = fds[0];
-	reader.events = POLLIN;
-	*/
-/*
-	for (i = 0; i < ncpus; i++) {
-		memset(buf, 0, sizeof(buf));
-		len = read(fds[i], buf, sizeof(buf));
-		printf(":::::%d\n", i);
-		write(1, buf, sizeof(buf));
-	}
-
-	return;
-	*/
-
-/*
-	for (;;) {
-poll_more:
-		printf("11{--.--PRE--.---\n");
-//		nready = poll((struct pollfd *)&readers[0], 4, -1);
-		nready = poll((struct pollfd *)&reader, 1, -1);
-		printf("{--.--POS--.---\n");
-		if (nready < 0) {
-			printf("dui----?----\n");
-		}
-
-		memset(buf, 0, sizeof(buf));
-		len = read(reader.fd, buf, sizeof(buf));
-		printf(":::::%d\n", reader.fd);
-		write(1, buf, sizeof(buf));
-
-		for (i = 0; i < ncpus; i++) {
-			printf("cpu(%d)->revents:%d\n", i, readers[i].revents);
-
-			if (readers[i].revents & POLLERR) {
-				printf("error happes in CPU:%d\n", i);
-			}
-
-			if (readers[i].revents & POLLOUT) {
-				printf("revents happens:%d\n", readers[i].revents);
-			}
-
-		}
-
-		sleep(10);
-	}
-	*/
+done:
+	return 0;
 }
 
 #define FSLOOK_PATH "/sys/kernel/debug/fslook/fslookvm"
@@ -134,20 +83,25 @@ static int run_fslook()
 		return fslook_fd;
 	}
 
-	printf("ioctl begin\n");
 	ret = ioctl(fslook_fd, FSLOOK_CMD_IOC_RUN, NULL);
-	printf("ioctl end\n");
 	switch (ret) {
 		case -EPERM:
 		case -EACCES:
 			fprintf(stderr, "You may not have permission to run fslook\n");
 			break;
 	}
-	printf("----> ioctl down\n");
 
 #if 0
 	ret = fslook_create_reader("./out");
 #endif
+	char name[1024];
+	int pos = 0;
+	memset(name, 0, 1024);
+more:
+	printf("fslook:%s\n", name);
+	scanf("%c", &name[pos++]);
+	goto more;
+	
 	ret = fslook_read(".out");
 
 	close(fslook_fd);

@@ -12,7 +12,8 @@ void show_super(struct super_block *sb, void *arg)
 	struct dentry *s_root;
 	int i = 0;
 	
-	fi = (struct fslook_info *)arg;
+//	fi = (struct fslook_info *)arg;
+	fi = &global_fslook_info;
 
 	if (strncmp(sb->s_type->name, "f2fs", 4) != 0) {
 		return;
@@ -21,20 +22,12 @@ void show_super(struct super_block *sb, void *arg)
 	/* how to format my output to the output */
 	fslook_printf(fi, "-------------\n");
 	s_root = sb->s_root;
-
 	fslook_printf(fi, "--->s_root:%s\n", s_root->d_name.name);
 	list_for_each_entry_safe(cur, tmp, &sb->s_root->d_subdirs, d_child)
 	{
-		i++;
-		fslook_printf(fi, "%d:cur:%s\n", i, cur->d_name.name);
+		fslook_printf(fi, "%d:%s\n", i, cur->d_name.name);
 	}
 
-	i = 0;
-	while (true) {
-		i++;
-		if (i<100);
-		fslook_printf(fi, "----------\n");
-	}
 
 }
 
