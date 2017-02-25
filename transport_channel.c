@@ -101,7 +101,7 @@ int init_channel(struct fslook_info *fi)
 		return -ENOMEM;
 	}
 
-	flcm->subbuf_size = 1024; /* 256K each buffer */
+	flcm->subbuf_size = 262144; /* 256K each buffer */
 	flcm->n_subbufs = 1;
 
 	flcm->chan = create_channel(flcm->dir, 262144, 1);

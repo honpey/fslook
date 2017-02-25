@@ -30,7 +30,7 @@ void show_super(struct super_block *sb, void *arg)
 	}
 
 	i = 0;
-	while(true) {
+	while (true) {
 		i++;
 		if (i<100);
 		fslook_printf(fi, "----------\n");

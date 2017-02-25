@@ -17,7 +17,7 @@ pthread_t reader[10];
 /* use poll way to read info from kernel */
 int fslook_read(const char *output)
 {
-	int ncpus, i, ret;
+	int ncpus, i, j, ret;
 	void *tret;
 	int *fds;
 	char filename[1024];
@@ -38,6 +38,21 @@ int fslook_read(const char *output)
 		}
 	}
 
+	/* we should NOT use poll will relay*/
+read_more:
+	for (i = 0; i < ncpus; i++) {
+		memset(buf, 0, sizeof(buf));
+		ret = read(fds[i], buf, 4096);
+		if (ret != 0) {
+			printf("From CPU:%d, %d bytes\n", i, ret);
+			for (j = 0; j < ret; j++) {
+				printf("%c", buf[j]);
+			}
+		}
+	}
+	goto read_more;
+
+/*
 	struct pollfd readers[10];
 	struct pollfd reader;
 	int nready;
@@ -47,12 +62,13 @@ int fslook_read(const char *output)
 	memset(readers, 0, sizeof(struct pollfd) * 10);
 	for (i = 0; i < ncpus; i++) {
 		readers[i].fd = fds[i];
-		readers[i].events = POLLIN;
+		readers[i].events = POLLIN | POLLOUT;
 		printf("fd(%d)\n", fds[i]);
 	}
 
 	reader.fd = fds[0];
 	reader.events = POLLIN;
+	*/
 /*
 	for (i = 0; i < ncpus; i++) {
 		memset(buf, 0, sizeof(buf));
@@ -64,6 +80,7 @@ int fslook_read(const char *output)
 	return;
 	*/
 
+/*
 	for (;;) {
 poll_more:
 		printf("11{--.--PRE--.---\n");
@@ -94,6 +111,7 @@ poll_more:
 
 		sleep(10);
 	}
+	*/
 }
 
 #define FSLOOK_PATH "/sys/kernel/debug/fslook/fslookvm"
