@@ -25,11 +25,6 @@ static long fslook_ioctl(struct file *file,
 	fi = &global_fslook_info;
 	switch (cmd) {
 		case FSLOOK_CMD_IOC_RUN:
-			fslook_printf(fi, "hello world\n");
-			fslook_printf(fi, "hello world.1\n");
-			fslook_printf(fi, "hello world.2\n");
-			fslook_printf(fi, "hello world.3\n");
-			fslook_printf(fi, "hello world.4\n");
 			show_supers(fi);
 			break;
 		default:

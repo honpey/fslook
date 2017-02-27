@@ -10,12 +10,103 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/errno.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "./fslook.h"
-typedef int bool;
-#define true 1
-#define false 0
 
+int fslookvm_fd, fslook_fd;
+int fslook();
+int parse(char *arg, struct command *);
+int init_fslook_debugfs_fd();
+int fslook_read(const char *output);
+struct command commands[MAX_COMMANDS] =  {
+	{"ls", 0},
+	{"cd", 1},
+	{"show", 2},
+	{"cls", 3},
+};
+int main()
+{
+	char shell_prompt[100];
+	char *input, *arg;
+	struct command cur_cmd;
+	int pos, ret;
+
+	snprintf(shell_prompt, sizeof(shell_prompt), "(fslook): ");
+	init_fslook_debugfs_fd();
+
+	for (;;) {
+		input = readline(shell_prompt);
+		pos = parse(input, &cur_cmd);
+		switch (pos) {
+			case 0:
+				ret = ioctl(fslook_fd, FSLOOK_CMD_IOC_RUN, NULL);
+				switch (ret) {
+					case -EPERM:
+					case -EACCES:
+						fprintf(stderr, "You may not have permission to run fslook\n");
+						break;
+					}
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			default:
+				break;
+		}
+		fslook_read(NULL);
+	}
+
+	return 0;
+}
+
+/*
+ * To parse the command in fslook shell
+ * How lua parse such info?
+ *
+ */
+int parse(char *command, struct command * cur_cmd)
+{
+	int whichtok = 0, ret = 0;
+	int posInCl = 0;	
+	char *tok, *delim = " ";
+	char *arg;
+
+	/* char *strtok(char *str, const char *delim) */
+	tok = strtok(command, delim);
+	while (tok != NULL) {
+		if (!(whichtok & 1)) {
+			posInCl = check_command(tok);
+			if (posInCl < 0) {
+				return posInCl;
+			}
+			cur_cmd->no = posInCl;
+			cur_cmd->name = tok;
+		} else {
+			cur_cmd->arg = tok;
+		}
+		whichtok ++;
+		tok = strtok(NULL, delim);
+	}
+	return cur_cmd->no;
+}
+
+int check_command(char *command)
+{
+	int i;
+	for (i = 0; i < MAX_COMMANDS; i++) {
+		if (strcmp(command, commands[i].name) == 0) {
+			printf("Found \"%s\"\n", command);
+			return i;
+		}
+	}
+	return -1;
+	
+}
 pthread_t reader[10];
 /* use poll way to read info from kernel */
 int fslook_read(const char *output)
@@ -28,22 +119,24 @@ int fslook_read(const char *output)
 	bool hasData = true;
 
 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-	printf("%d cpus to work\n", ncpus);
+//	printf("%d cpus to work\n", ncpus);
 
 	fds = malloc(sizeof(int) * ncpus);
 	memset(fds, 0, sizeof(int) * ncpus);
 
 	for (i = 0; i < ncpus; i++) {
 		sprintf(filename, "/sys/kernel/debug/fslook/channel/cpu%d", i);
-		printf("To read:%s\n", filename);
+	//	printf("To read:%s\n", filename);
 		fds[i] = open(filename, O_RDONLY);
 		if (fds[i] < 0) {
 			printf("fail to open %s\n", filename);
+			exit(-1);
 		}
 	}
 
 	/* we should NOT use poll will relay*/
 read_more:
+//	printf("hello world\n");
 	if (!hasData)
 		goto done;		
 	hasData = false;
@@ -65,12 +158,8 @@ done:
 
 #define FSLOOK_PATH "/sys/kernel/debug/fslook/fslookvm"
 
-static int run_fslook()
+int init_fslook_debugfs_fd()
 {
-	int fslookvm_fd, fslook_fd;
-	int ret;
-	void *tret;
-
 	fslookvm_fd = open(FSLOOK_PATH, O_RDONLY);
 	if (fslookvm_fd < 0) {
 		printf("open %s fail:%d\n", FSLOOK_PATH, fslookvm_fd);
@@ -83,39 +172,5 @@ static int run_fslook()
 		return fslook_fd;
 	}
 
-	ret = ioctl(fslook_fd, FSLOOK_CMD_IOC_RUN, NULL);
-	switch (ret) {
-		case -EPERM:
-		case -EACCES:
-			fprintf(stderr, "You may not have permission to run fslook\n");
-			break;
-	}
-
-#if 0
-	ret = fslook_create_reader("./out");
-#endif
-	char name[1024];
-	int pos = 0;
-	memset(name, 0, 1024);
-more:
-	printf("fslook:%s\n", name);
-	scanf("%c", &name[pos++]);
-	goto more;
 	
-	ret = fslook_read(".out");
-
-	close(fslook_fd);
-	close(fslookvm_fd);
-
-	return ret;
-
-}
-/* Get kernel info to userspace */
-
-int main()
-{
-	printf("\nWelcome the fslook world .. \n\n");
-
-	run_fslook();
-	return 0;
 }

@@ -1,4 +1,4 @@
 fslook:main.c
-	gcc -o $@ $< 
+	gcc -o $@ $< -lreadline
 clean:
 	rm fslook
