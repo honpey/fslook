@@ -1,6 +1,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>
+#include <linux/fs_struct.h>
 
 #include "fslook.h"
 
@@ -26,7 +27,6 @@ void show_super(struct super_block *sb, void *arg)
 	}
 
 	/* how to format my output to the output */
-	fslook_printf(fi, "-------------\n");
 	s_root = sb->s_root;
 	struct dentry *d_parent;
 	d_parent = s_root->d_parent;
@@ -39,8 +39,6 @@ void show_super(struct super_block *sb, void *arg)
 	{
 		fslook_printf(fi, "%d:%s\n", i, cur->d_name.name);
 	}
-	fslook_printf(fi, "____________\n");
-
 
 }
 
@@ -55,8 +53,26 @@ typedef void (*i_supers)(void (*f)(struct super_block *, void *), void *arg);
 
 void show_supers(struct fslook_info *fi)
 {
+	struct path path; /* struct vfsmount *mnt; struct dentry *dentry; */
+	struct dentry *dentry;
+	struct super_block *sb;
+	unsigned managed;
+
+	get_fs_root(current->fs, &path);
+	fslook_printf(fi, "path->dentry's name :%s\n",
+			path.dentry->d_name.name);
+
+	dentry = path.dentry;
+	sb = dentry->d_sb;
+
+	managed = ACCESS_ONCE(dentry->d_flags);
+	fslook_printf(fi, "managed:0x%x\n", managed);
+	fslook_printf(fi, "D_MOUNTED:0x%x\n", DCACHE_MOUNTED);
+	fslook_printf(fi, "sb:%s\n", sb->s_type->name);
+
 	i_supers f = (i_supers)0xffffffff81210000;
 	fslook_printf(fi, "FileSystems in this system including:\n");
 	f(show_super, fi);
 	fslook_printf(fi, "\n");
+
 }

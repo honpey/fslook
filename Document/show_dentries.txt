@@ -1,5 +1,20 @@
 2017/02/15
 
+if I've found the root dentry, then I can traval the full path of 
+the system.
+
+managed = ACCESS_ONCE(path->dentry->d_flags);
+
+do_file_open_root(struct dentry *dentry, struct vfsmount *mnt,
+	const char *name, const struct open_flags *op)
+{
+	
+}
+
+
+
+2017/02/15
+
 Attack linux using kprobe.
 
 Tonight I wanna to show all the dentries inhabited in our current

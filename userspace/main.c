@@ -15,6 +15,8 @@
 
 #include "./fslook.h"
 
+int *fds;
+int ncpus;
 int fslookvm_fd, fslook_fd;
 int fslook();
 int parse(char *arg, struct command *);
@@ -26,6 +28,19 @@ struct command commands[MAX_COMMANDS] =  {
 	{"show", 2},
 	{"cls", 3},
 };
+void sigfunc(int signo)
+{
+	int i;
+	/* close file first, and then rmmod fslookvm */
+	close(fslookvm_fd);
+	close(fslook_fd);
+	for (i=0; i<ncpus; i++) {
+		close(fds[i]);
+	}
+	system("rmmod fslook.ko");
+	printf("\n");
+	exit(-1);
+}
 int main()
 {
 	char shell_prompt[100];
@@ -33,6 +48,8 @@ int main()
 	struct command cur_cmd;
 	int pos, ret;
 
+	system("insmod ../fslook.ko");
+	signal(SIGINT, sigfunc);
 	snprintf(shell_prompt, sizeof(shell_prompt), "(fslook): ");
 	init_fslook_debugfs_fd();
 
@@ -111,9 +128,8 @@ pthread_t reader[10];
 /* use poll way to read info from kernel */
 int fslook_read(const char *output)
 {
-	int ncpus, i, j, ret;
+	int i, j, ret;
 	void *tret;
-	int *fds;
 	char filename[1024];
 	char buf[4096];
 	bool hasData = true;
