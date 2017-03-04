@@ -94,7 +94,6 @@ void show_supers(struct fslook_info *fi)
 
 	list_for_each_entry_safe(cur, tmp, &dentry->d_subdirs, d_child)
 	{
-//		fslook_printf(fi, "%s\n", cur->d_name.name);
 		subpath.dentry = cur;
 		subpath.mnt = path.mnt;
 		managed = ACCESS_ONCE(cur->d_flags);

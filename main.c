@@ -119,5 +119,3 @@ static void __exit fslook_exit(void)
 module_init(fslook_init)
 module_exit(fslook_exit)
 MODULE_LICENSE("GPL");
-
-

@@ -12,6 +12,10 @@
 #include <linux/errno.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #include "./fslook.h"
 
@@ -34,10 +38,11 @@ void sigfunc(int signo)
 	/* close file first, and then rmmod fslookvm */
 	close(fslookvm_fd);
 	close(fslook_fd);
-	for (i=0; i<ncpus; i++) {
+	for (i=0; i < ncpus; i++) {
 		close(fds[i]);
 	}
 	system("rmmod fslook.ko");
+	sleep(10);
 	printf("\n");
 	exit(-1);
 }
@@ -47,6 +52,40 @@ int main()
 	char *input, *arg;
 	struct command cur_cmd;
 	int pos, ret;
+	int debug_count = 0;
+	struct stat filestat;
+	int fd;
+	char buffer[1024];
+
+	pid_t tid;
+	tid = syscall(__NR_gettid);
+	printf("tid:%d\n", tid);
+
+	/* load .ko by init_module */
+	/* we should firt read the fslook.ko and know length of the file */
+	fd = open("../fslook.ko", O_RDONLY, S_IRUSR);
+	if (fd < 0) {
+		printf("fail to open ../fslook.ko:%d\n", fd);
+		return -1;
+	}
+	ret = fstat(fd, &filestat);
+	if (ret < 0) {
+		printf("fstat fail:%d\n", ret);
+		return -1;
+	}
+	printf("filestat.len:%d\n", filestat.st_size);
+	ret = syscall(__NR_read, fd, buffer, 1024);
+	printf("read fslook:%d\n", ret);
+
+//	ret = finit_module(fd, NULL, 0);
+	printf("__NR_fiit_module:%d\n", __NR_finit_module);
+	ret = syscall(__NR_finit_module, fd, NULL, 3);
+//	ret = syscall(350, fd, NULL, 0);
+	if (ret < 0) {
+		printf("init module:%d\n", ret);
+		return -1;
+	}
+	return;
 
 	system("insmod ../fslook.ko");
 	signal(SIGINT, sigfunc);
@@ -54,7 +93,11 @@ int main()
 	init_fslook_debugfs_fd();
 
 	for (;;) {
+		debug_count++;
+		snprintf(shell_prompt, sizeof(shell_prompt), 
+						"(fslook):%d ", debug_count);
 		input = readline(shell_prompt);
+		printf("......\n");
 		pos = parse(input, &cur_cmd);
 		switch (pos) {
 			case 0:
