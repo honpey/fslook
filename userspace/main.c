@@ -81,6 +81,7 @@ int main()
 	return 0;
 }
 
+int check_command(char *command);
 /*
  * To parse the command in fslook shell
  * How lua parse such info?
