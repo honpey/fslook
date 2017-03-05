@@ -41,8 +41,6 @@ void sigfunc(int signo)
 	for (i=0; i < ncpus; i++) {
 		close(fds[i]);
 	}
-	system("rmmod fslook.ko");
-	sleep(10);
 	printf("\n");
 	exit(-1);
 }
@@ -73,19 +71,18 @@ int main()
 		printf("fstat fail:%d\n", ret);
 		return -1;
 	}
-	printf("filestat.len:%d\n", filestat.st_size);
-	ret = syscall(__NR_read, fd, buffer, 1024);
-	printf("read fslook:%d\n", ret);
-
 //	ret = finit_module(fd, NULL, 0);
-	printf("__NR_fiit_module:%d\n", __NR_finit_module);
-	ret = syscall(__NR_finit_module, fd, NULL, 3);
+//	printf("__NR_fiit_module:%d\n", __NR_finit_module);
+//	ret = syscall(__NR_finit_module, fd, NULL, 3);
 //	ret = syscall(350, fd, NULL, 0);
+	system("rmmod fslook.ko");
+	printf("rmmod fslook.ko OK\n");
+	system("insmod ../fslook.ko 2>/dev/null");
+	printf("insmod OK\n");
 	if (ret < 0) {
 		printf("init module:%d\n", ret);
 		return -1;
 	}
-	return;
 
 	system("insmod ../fslook.ko");
 	signal(SIGINT, sigfunc);
@@ -95,13 +92,17 @@ int main()
 	for (;;) {
 		debug_count++;
 		snprintf(shell_prompt, sizeof(shell_prompt), 
-						"(fslook):%d ", debug_count);
+						"(fslook):%d* ", debug_count);
 		input = readline(shell_prompt);
 		printf("......\n");
 		pos = parse(input, &cur_cmd);
+#if 1
+		printf("command:(%s,%d,%s)\n", 
+				cur_cmd.name, cur_cmd.no, cur_cmd.arg);
+#endif
 		switch (pos) {
 			case 0:
-				ret = ioctl(fslook_fd, FSLOOK_CMD_IOC_RUN, NULL);
+				ret = ioctl(fslook_fd, FSLOOK_CMD_IOC_LS, NULL);
 				switch (ret) {
 					case -EPERM:
 					case -EACCES:
@@ -112,6 +113,11 @@ int main()
 			case 1:
 				break;
 			case 2:
+				ret = ioctl(fslook_fd, FSLOOK_CMD_IOC_SHOW,
+								&cur_cmd);
+				if (ret < 0) {
+					fprintf(stderr, "You may not have permission to run fslook\n");
+				}
 				break;
 			case 3:
 				break;
@@ -119,6 +125,7 @@ int main()
 				break;
 		}
 		fslook_read(NULL);
+		pos = 0;
 	}
 
 	return 0;

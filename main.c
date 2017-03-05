@@ -20,12 +20,16 @@ static long fslook_ioctl(struct file *file,
 {
 	int ret = 0;
 	struct fslook_info *fi;
+	struct fslook_cmd *fl_cmd = (struct fslook_cmd *)arg;
 
 //	fi = (struct fslook_info *)file->private_data;
 	fi = &global_fslook_info;
 	switch (cmd) {
-		case FSLOOK_CMD_IOC_RUN:
+		case FSLOOK_CMD_IOC_LS:
 			show_supers(fi);
+			break;
+		case FSLOOK_CMD_IOC_SHOW:
+			show_fs(fi, fl_cmd->arg); 
 			break;
 		default:
 			return -EINVAL;

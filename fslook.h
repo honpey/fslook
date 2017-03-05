@@ -14,10 +14,18 @@ struct channel_manager
 	size_t n_subbufs;
 };
 
+struct fslook_cmd {
+	char *name;
+	int no;
+	char *arg;
+};
+
 extern int show_all_dentries(void);
 struct fslook_info;
 extern void show_supers(struct fslook_info *);
+extern void show_fs(struct fslook_info *, char *);
 extern void test_list(void);
+extern char *get_name_by_inode(struct inode *);
 struct fslook_info;
 int fslook_transport_init(struct fslook_info *, struct dentry *);
 

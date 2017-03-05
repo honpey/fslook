@@ -81,4 +81,5 @@ struct fslook_info {
 
 };
 
-#define FSLOOK_CMD_IOC_RUN	('$' + 1)
+#define FSLOOK_CMD_IOC_LS	('$' + 1)
+#define FSLOOK_CMD_IOC_SHOW	('$' + 2)

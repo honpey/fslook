@@ -1,4 +1,4 @@
-fl:main.c
+fslook:main.c
 	gcc -o $@ $< -lreadline
 	
 clean:

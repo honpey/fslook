@@ -8,6 +8,7 @@
 
 extern struct fslook_info global_fslook_info;
 int jishu = 0;
+
 /* How to get mount info? */
 void show_super(struct super_block *sb, void *arg)
 {
@@ -20,7 +21,7 @@ void show_super(struct super_block *sb, void *arg)
 	fi = (struct fslook_info *)arg;
 //	fi = &global_fslook_info;
 
-	if (jishu%10 == 0)
+	if (jishu % 10 == 0)
 		fslook_printf(fi, "\n");
 	fslook_printf(fi, "%s ", sb->s_type->name);
 	jishu++;
@@ -75,7 +76,80 @@ static int follow_managed(struct fslook_info *fi,
 			root_dent->d_sb->s_type->name);
 	return 0;
 }
+
+/*
+ * Show all super_block inhabitied in System
+ */
 void show_supers(struct fslook_info *fi)
+{
+	i_supers f;
+
+	f = (void *)kallsyms_lookup_name("iterate_supers");
+	fslook_printf(fi, "FileSystems in this system including:\n");
+	f(show_super, fi);
+	fslook_printf(fi, "\n");
+
+}
+
+struct parm_for_show_fs
+{
+	struct fslook_info *fi;
+	char *fs_name;
+	
+};
+/* Found special fs info */
+void show_spec_fs_info(struct super_block *sb, void *arg)
+{
+	struct parm_for_show_fs * p_fs_info;
+	struct fslook_info *fi;
+	char *fs_name, *file_name;
+	int len;
+	struct dentry *s_root, *d_parent;
+	struct inode *cur, *tmp;
+
+	p_fs_info = (struct parm_for_show_fs *)arg;
+	fi = p_fs_info->fi;
+	fs_name = p_fs_info->fs_name;
+	len = strlen(fs_name);
+	
+	if (strncmp(sb->s_type->name, fs_name, len) != 0)
+		return;
+
+	s_root = sb->s_root;
+	d_parent = s_root->d_parent;
+
+	list_for_each_entry_safe(cur, tmp, &sb->s_inodes, i_sb_list) {
+		/* we add a hard file filter here here, only output the special inode */
+		/* can lua work here? */
+		file_name = get_name_by_inode(cur);
+		if (!file_name)
+			continue;
+		if (strncmp(file_name, "wwww", 4) != 0)
+			continue;
+
+		fslook_printf(fi, "ino(%ld,%s) sb(%s)\n", cur->i_ino,
+				get_name_by_inode(cur),
+				cur->i_sb->s_type->name);
+	}
+	return;
+	
+
+}
+
+void show_fs(struct fslook_info *fi, char *name)
+{
+	i_supers f;
+	struct parm_for_show_fs fs_info;
+
+	fs_info.fi = fi;
+	fs_info.fs_name = name;
+	f = (void *)kallsyms_lookup_name("iterate_supers");
+
+	f(show_spec_fs_info, &fs_info);
+	return;	
+}
+
+void show_root_subdirs(struct fslook_info *fi)
 {
 	struct path path; /* struct vfsmount *mnt; struct dentry *dentry; */
 	struct path subpath;
@@ -83,7 +157,6 @@ void show_supers(struct fslook_info *fi)
 	struct super_block *sb;
 	struct dentry *cur, *tmp;
 	unsigned managed;
-	i_supers f;
 
 	get_fs_root(current->fs, &path);
 	fslook_printf(fi, "path->dentry's name :%s\n",
@@ -110,11 +183,4 @@ void show_supers(struct fslook_info *fi)
 	managed = ACCESS_ONCE(dentry->d_flags);
 	fslook_printf(fi, "managed:0x%x\n", managed);
 	fslook_printf(fi, "D_MOUNTED:0x%x\n", DCACHE_MOUNTED);
-	fslook_printf(fi, "sb:%s\n", sb->s_type->name);
-
-	f = (void *)kallsyms_lookup_name("iterate_supers");
-	fslook_printf(fi, "FileSystems in this system including:\n");
-	f(show_super, fi);
-	fslook_printf(fi, "\n");
-
 }

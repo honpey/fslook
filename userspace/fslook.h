@@ -1,4 +1,6 @@
-#define FSLOOK_CMD_IOC_RUN ('$' + 1)
+#define FSLOOK_CMD_IOC_LS ('$' + 1)
+#define FSLOOK_CMD_IOC_SHOW ('$'+ 2)
+
 typedef int bool;
 #define true 1
 #define false 0
